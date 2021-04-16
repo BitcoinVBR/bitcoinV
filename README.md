@@ -1,7 +1,7 @@
 BitcoinV PoS Core integration/staging tree
 =====================================
 
-https://bitcoinv.org
+https://www.bitcoinv.org
 
 What is BitcoinV PoS?
 ----------------
