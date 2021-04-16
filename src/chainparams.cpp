@@ -153,14 +153,14 @@ public:
         // This is fine at runtime as we'll fall back to using them as a oneshot if they don't support the
         // service bits we want, but we should get them updated to support all service bits wanted by any
         // release ASAP to avoid it where possible.
-        vSeeds.emplace_back("pos_seed1.bitcoinv.org");
-        vSeeds.emplace_back("pos_seed2.bitcoinv.org");
-        vSeeds.emplace_back("pos_seed3.bitcoinv.org");
-        vSeeds.emplace_back("pos_seed4.bitcoinv.org");
-        vSeeds.emplace_back("pos_seed5.bitcoinv.org");
-        vSeeds.emplace_back("pos_seed6.bitcoinv.org");
-        vSeeds.emplace_back("pos_seed7.bitcoinv.org");
-        vSeeds.emplace_back("pos_seed8.bitcoinv.org");
+        vSeeds.emplace_back("pos-seed1.bitcoinv.org");
+        vSeeds.emplace_back("pos-seed2.bitcoinv.org");
+        vSeeds.emplace_back("pos-seed3.bitcoinv.org");
+        vSeeds.emplace_back("pos-seed4.bitcoinv.org");
+        vSeeds.emplace_back("pos-seed5.bitcoinv.org");
+        vSeeds.emplace_back("pos-seed6.bitcoinv.org");
+        vSeeds.emplace_back("pos-seed7.bitcoinv.org");
+        vSeeds.emplace_back("pos-seed8.bitcoinv.org");
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,0);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
