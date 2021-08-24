@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 The Bitcoin Core developers
+// Copyright (c) 2018-2019 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -6,11 +6,9 @@
 #define BITCOIN_INTERFACES_NODE_H
 
 #include <amount.h>     // For CAmount
-#include <external_signer.h>
-#include <net.h>        // For NodeId
+#include <net.h>        // For CConnman::NumConnections
 #include <net_types.h>  // For banmap_t
 #include <netaddress.h> // For Network
-#include <netbase.h>    // For ConnectionDirection
 #include <support/allocators/secure.h> // For SecureString
 #include <util/translation.h>
 
@@ -84,13 +82,13 @@ public:
     virtual bool shutdownRequested() = 0;
 
     //! Map port.
-    virtual void mapPort(bool use_upnp, bool use_natpmp) = 0;
+    virtual void mapPort(bool use_upnp) = 0;
 
     //! Get proxy.
     virtual bool getProxy(Network net, proxyType& proxy_info) = 0;
 
     //! Get number of connections.
-    virtual size_t getNodeCount(ConnectionDirection flags) = 0;
+    virtual size_t getNodeCount(CConnman::NumConnections flags) = 0;
 
     //! Get stats for connected nodes.
     using NodesStats = std::vector<std::tuple<CNodeStats, bool, CNodeStateStats>>;
@@ -110,9 +108,6 @@ public:
 
     //! Disconnect node by id.
     virtual bool disconnectById(NodeId id) = 0;
-
-    //! List external signers
-    virtual std::vector<ExternalSigner> externalSigners() = 0;
 
     //! Get total bytes recv.
     virtual int64_t getTotalBytesRecv() = 0;
@@ -156,6 +151,9 @@ public:
     //! Get network active.
     virtual bool getNetworkActive() = 0;
 
+    //! Estimate smart fee.
+    virtual CFeeRate estimateSmartFee(int num_blocks, bool conservative, int* returned_target = nullptr) = 0;
+
     //! Get dust relay fee.
     virtual CFeeRate getDustRelayFee() = 0;
 
@@ -176,6 +174,21 @@ public:
 
     //! Get wallet client.
     virtual WalletClient& walletClient() = 0;
+
+    //! Get node synchronization information.
+    virtual void getSyncInfo(int& numBlocks, bool& isSyncing) = 0;
+
+    //! Get the reward for the block at some specific height
+    virtual int64_t getBlockSubsidy(int nHeight) = 0;
+
+    //! Get the network stake weight
+    virtual uint64_t getNetworkStakeWeight() = 0;
+
+    //! Get the estimated annual roi
+    virtual double getEstimatedAnnualROI() = 0;
+
+    //! Get the money supply
+    virtual int64_t getMoneySupply() = 0;
 
     //! Register handler for init messages.
     using InitMessageFn = std::function<void(const std::string& message)>;

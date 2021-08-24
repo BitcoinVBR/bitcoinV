@@ -310,7 +310,7 @@ public:
 };
 } // namespace
 
-FUZZ_TARGET(txrequest)
+void test_one_input(const std::vector<uint8_t>& buffer)
 {
     // Tester object (which encapsulates a TxRequestTracker).
     Tester tester;

@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2020 The Bitcoin Core developers
+// Copyright (c) 2011-2019 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -38,6 +38,10 @@ public:
     std::string sPaymentRequest;
     // Empty if no authentication or invalid signature/cert/etc.
     QString authenticatedMerchant;
+
+    // Cold staking.
+    bool isP2CS = false;
+    QString ownerAddress;
 
     bool fSubtractFeeFromAmount; // memory only
 

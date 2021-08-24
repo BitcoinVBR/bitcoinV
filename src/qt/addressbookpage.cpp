@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2020 The Bitcoin Core developers
+// Copyright (c) 2011-2019 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -22,12 +22,12 @@
 
 class AddressBookSortFilterProxyModel final : public QSortFilterProxyModel
 {
-    const QString m_type;
+    const QStringList m_types;
 
 public:
-    AddressBookSortFilterProxyModel(const QString& type, QObject* parent)
+    AddressBookSortFilterProxyModel(const QStringList& types, QObject* parent)
         : QSortFilterProxyModel(parent)
-        , m_type(type)
+        , m_types(types)
     {
         setDynamicSortFilter(true);
         setFilterCaseSensitivity(Qt::CaseInsensitive);
@@ -40,7 +40,8 @@ protected:
         auto model = sourceModel();
         auto label = model->index(row, AddressTableModel::Label, parent);
 
-        if (model->data(label, AddressTableModel::TypeRole).toString() != m_type) {
+        auto type = model->data(label, AddressTableModel::TypeRole).toString();
+        if (!m_types.contains(type)) {
             return false;
         }
 
@@ -56,7 +57,7 @@ protected:
 };
 
 AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode, Tabs _tab, QWidget *parent) :
-    QDialog(parent, GUIUtil::dialog_flags),
+    QDialog(parent),
     ui(new Ui::AddressBookPage),
     model(nullptr),
     mode(_mode),
@@ -112,17 +113,29 @@ AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode,
         break;
     }
 
+    // Context menu actions
+    QAction *copyAddressAction = new QAction(tr("&Copy Address"), this);
+    QAction *copyLabelAction = new QAction(tr("Copy &Label"), this);
+    QAction *editAction = new QAction(tr("&Edit"), this);
+    deleteAction = new QAction(ui->deleteAddress->text(), this);
+
     // Build context menu
     contextMenu = new QMenu(this);
-    contextMenu->addAction(tr("&Copy Address"), this, &AddressBookPage::on_copyAddress_clicked);
-    contextMenu->addAction(tr("Copy &Label"), this, &AddressBookPage::onCopyLabelAction);
-    contextMenu->addAction(tr("&Edit"), this, &AddressBookPage::onEditAction);
+    contextMenu->addAction(copyAddressAction);
+    contextMenu->addAction(copyLabelAction);
+    contextMenu->addAction(editAction);
+    if(tab == SendingTab)
+        contextMenu->addAction(deleteAction);
+    contextMenu->addSeparator();
 
-    if (tab == SendingTab) {
-        contextMenu->addAction(tr("&Delete"), this, &AddressBookPage::on_deleteAddress_clicked);
-    }
+    // Connect signals for context menu actions
+    connect(copyAddressAction, &QAction::triggered, this, &AddressBookPage::on_copyAddress_clicked);
+    connect(copyLabelAction, &QAction::triggered, this, &AddressBookPage::onCopyLabelAction);
+    connect(editAction, &QAction::triggered, this, &AddressBookPage::onEditAction);
+    connect(deleteAction, &QAction::triggered, this, &AddressBookPage::on_deleteAddress_clicked);
 
     connect(ui->tableView, &QWidget::customContextMenuRequested, this, &AddressBookPage::contextualMenu);
+
     connect(ui->closeButton, &QPushButton::clicked, this, &QDialog::accept);
 
     GUIUtil::handleCloseWindowShortcut(this);
@@ -139,8 +152,18 @@ void AddressBookPage::setModel(AddressTableModel *_model)
     if(!_model)
         return;
 
-    auto type = tab == ReceivingTab ? AddressTableModel::Receive : AddressTableModel::Send;
-    proxyModel = new AddressBookSortFilterProxyModel(type, this);
+    QStringList types;
+    switch(tab)
+    {
+    case ReceivingTab:
+        types = QStringList({AddressTableModel::Receive});
+        break;
+    case SendingTab:
+        types = QStringList({AddressTableModel::Send});
+        break;
+    }
+
+    proxyModel = new AddressBookSortFilterProxyModel(types, this);
     proxyModel->setSourceModel(_model);
 
     connect(ui->searchLineEdit, &QLineEdit::textChanged, proxyModel, &QSortFilterProxyModel::setFilterWildcard);
@@ -182,10 +205,19 @@ void AddressBookPage::onEditAction()
     if(indexes.isEmpty())
         return;
 
-    EditAddressDialog dlg(
-        tab == SendingTab ?
-        EditAddressDialog::EditSendingAddress :
-        EditAddressDialog::EditReceivingAddress, this);
+    EditAddressDialog::Mode editAddressMode;
+    switch(tab)
+    {
+    case SendingTab:
+        editAddressMode = EditAddressDialog::EditSendingAddress;
+        break;
+    case ReceivingTab:
+    default:
+        editAddressMode = EditAddressDialog::EditReceivingAddress;
+        break;
+    }
+
+    EditAddressDialog dlg(editAddressMode, this);
     dlg.setModel(model);
     QModelIndex origIndex = proxyModel->mapToSource(indexes.at(0));
     dlg.loadRow(origIndex.row());
@@ -237,11 +269,13 @@ void AddressBookPage::selectionChanged()
             // In sending tab, allow deletion of selection
             ui->deleteAddress->setEnabled(true);
             ui->deleteAddress->setVisible(true);
+            deleteAction->setEnabled(true);
             break;
         case ReceivingTab:
             // Deleting receiving addresses, however, is not allowed
             ui->deleteAddress->setEnabled(false);
             ui->deleteAddress->setVisible(false);
+            deleteAction->setEnabled(false);
             break;
         }
         ui->copyAddress->setEnabled(true);
@@ -281,9 +315,7 @@ void AddressBookPage::on_exportButton_clicked()
     // CSV is currently the only supported format
     QString filename = GUIUtil::getSaveFileName(this,
         tr("Export Address List"), QString(),
-        /*: Expanded name of the CSV file format.
-            See https://en.wikipedia.org/wiki/Comma-separated_values */
-        tr("Comma separated file") + QLatin1String(" (*.csv)"), nullptr);
+        tr("Comma separated file (*.csv)"), nullptr);
 
     if (filename.isNull())
         return;
@@ -297,8 +329,6 @@ void AddressBookPage::on_exportButton_clicked()
 
     if(!writer.write()) {
         QMessageBox::critical(this, tr("Exporting Failed"),
-            /*: An error message. %1 is a stand-in argument for the name
-                of the file we attempted to save to. */
             tr("There was an error trying to save the address list to %1. Please try again.").arg(filename));
     }
 }

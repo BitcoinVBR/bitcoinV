@@ -519,6 +519,10 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation>Zavřít peněženku</translation>
     </message>
     <message>
+        <source>Close all wallets</source>
+        <translation>Zavřít všechny peněženky</translation>
+    </message>
+    <message>
         <source>Show the %1 help message to get a list with possible Bitcoin command-line options</source>
         <translation>Seznam argumentů Bitcoinu pro příkazovou řádku získáš v nápovědě %1</translation>
     </message>
@@ -835,7 +839,7 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <source>Create</source>
         <translation>Vytvořit</translation>
     </message>
-</context>
+    </context>
 <context>
     <name>EditAddressDialog</name>
     <message>
@@ -1450,12 +1454,20 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation>Dialog</translation>
     </message>
     <message>
+        <source>Save Transaction Data</source>
+        <translation>Zachovaj procesní data</translation>
+    </message>
+    <message>
         <source>Total Amount</source>
         <translation>Celková částka</translation>
     </message>
     <message>
         <source>or</source>
         <translation>nebo</translation>
+    </message>
+    <message>
+        <source>(But this wallet does not have the right keys.)</source>
+        <translation>Ale tenhle vstup nemá správné klíče</translation>
     </message>
     </context>
 <context>
@@ -1621,6 +1633,10 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>Error: %1</source>
         <translation>Chyba: %1</translation>
+    </message>
+    <message>
+        <source>Error initializing settings: %1</source>
+        <translation>Zjišťování neshod: %1</translation>
     </message>
     <message>
         <source>%1 didn't yet exit safely...</source>
@@ -2351,6 +2367,10 @@ Poznámka: Jelikož je poplatek počítaný za bajt, poplatek o hodnotě "100 sa
     <message>
         <source>Are you sure you want to send?</source>
         <translation>Jsi si jistý, že tuhle transakci chceš poslat?</translation>
+    </message>
+    <message>
+        <source>Save Transaction Data</source>
+        <translation>Zachovaj procesní data</translation>
     </message>
     <message>
         <source>or</source>
@@ -3174,6 +3194,10 @@ Poznámka: Jelikož je poplatek počítaný za bajt, poplatek o hodnotě "100 sa
         <source>Closing the wallet for too long can result in having to resync the entire chain if pruning is enabled.</source>
         <translation>Zavření peněženky na příliš dlouhou dobu může vyústit v potřebu resynchronizace celého blockchainu pokud je zapnuté prořezávání.</translation>
     </message>
+    <message>
+        <source>Close all wallets</source>
+        <translation>Zavřít všechny peněženky</translation>
+    </message>
     </context>
 <context>
     <name>WalletFrame</name>
@@ -3435,6 +3459,10 @@ Poznámka: Jelikož je poplatek počítaný za bajt, poplatek o hodnotě "100 sa
         <translation>Během inicializace se nepodařilo proskenovat peněženku</translation>
     </message>
     <message>
+        <source>Failed to verify database</source>
+        <translation>Selhání v ověření databáze</translation>
+    </message>
+    <message>
         <source>Importing...</source>
         <translation>Importuji...</translation>
     </message>
@@ -3679,10 +3707,6 @@ Poznámka: Jelikož je poplatek počítaný za bajt, poplatek o hodnotě "100 sa
     <message>
         <source>%s is set very high!</source>
         <translation>%s je nastaveno velmi vysoko!</translation>
-    </message>
-    <message>
-        <source>Error loading wallet %s. Duplicate -wallet filename specified.</source>
-        <translation>Chyba při načítání peněženky %s. Udán duplicitní název souboru -wallet.</translation>
     </message>
     <message>
         <source>Starting network threads...</source>

@@ -14,7 +14,7 @@
 bool SigHasLowR(const secp256k1_ecdsa_signature* sig);
 int ecdsa_signature_parse_der_lax(const secp256k1_context* ctx, secp256k1_ecdsa_signature* sig, const unsigned char* input, size_t inputlen);
 
-FUZZ_TARGET(secp256k1_ecdsa_signature_parse_der_lax)
+void test_one_input(const std::vector<uint8_t>& buffer)
 {
     FuzzedDataProvider fuzzed_data_provider{buffer.data(), buffer.size()};
     const std::vector<uint8_t> signature_bytes = ConsumeRandomLengthByteVector(fuzzed_data_provider);

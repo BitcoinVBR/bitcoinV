@@ -7,17 +7,18 @@
 #include <rpc/client.h>
 #include <rpc/util.h>
 #include <test/fuzz/fuzz.h>
+#include <util/memory.h>
 
 #include <limits>
 #include <string>
 
-void initialize_parse_univalue()
+void initialize()
 {
     static const ECCVerifyHandle verify_handle;
     SelectParams(CBaseChainParams::REGTEST);
 }
 
-FUZZ_TARGET_INIT(parse_univalue, initialize_parse_univalue)
+void test_one_input(const std::vector<uint8_t>& buffer)
 {
     const std::string random_string(buffer.begin(), buffer.end());
     bool valid = true;

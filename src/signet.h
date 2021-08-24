@@ -9,7 +9,7 @@
 #include <primitives/block.h>
 #include <primitives/transaction.h>
 
-#include <optional>
+#include <optional.h>
 
 /**
  * Extract signature and check whether a block has a valid solution
@@ -28,7 +28,7 @@ class SignetTxs {
     SignetTxs(const T1& to_spend, const T2& to_sign) : m_to_spend{to_spend}, m_to_sign{to_sign} { }
 
 public:
-    static std::optional<SignetTxs> Create(const CBlock& block, const CScript& challenge);
+    static Optional<SignetTxs> Create(const CBlock& block, const CScript& challenge);
 
     const CTransaction m_to_spend;
     const CTransaction m_to_sign;

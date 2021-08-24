@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-FUZZ_TARGET(primitives_transaction)
+void test_one_input(const std::vector<uint8_t>& buffer)
 {
     FuzzedDataProvider fuzzed_data_provider(buffer.data(), buffer.size());
     const CScript script = ConsumeScript(fuzzed_data_provider);

@@ -7,10 +7,12 @@
 #include <qt/guiutil.h>
 #include <qt/walletmodel.h>
 
+#include <addressbook.h>
 #include <key_io.h>
 #include <wallet/wallet.h>
 
 #include <algorithm>
+#include <typeinfo>
 
 #include <QFont>
 #include <QDebug>
@@ -56,13 +58,27 @@ static AddressTableEntry::Type translateTransactionType(const QString &strPurpos
 {
     AddressTableEntry::Type addressType = AddressTableEntry::Hidden;
     // "refund" addresses aren't shown, and change addresses aren't returned by getAddresses at all.
-    if (strPurpose == "send")
+    if (strPurpose == QString::fromStdString(AddressBook::AddressBookPurpose::SEND))
         addressType = AddressTableEntry::Sending;
-    else if (strPurpose == "receive")
+    else if (strPurpose == QString::fromStdString(AddressBook::AddressBookPurpose::RECEIVE))
         addressType = AddressTableEntry::Receiving;
-    else if (strPurpose == "unknown" || strPurpose == "") // if purpose not set, guess
+    else if (strPurpose == QString::fromStdString(AddressBook::AddressBookPurpose::UNKNOWN) || strPurpose == "") // if purpose not set, guess
         addressType = (isMine ? AddressTableEntry::Receiving : AddressTableEntry::Sending);
     return addressType;
+}
+
+static QString translateTypeToString(AddressTableEntry::Type type)
+{
+    switch (type) {
+        case AddressTableEntry::Sending:
+            return QObject::tr("Contact");
+        case AddressTableEntry::Receiving:
+            return QObject::tr("Receiving");
+        case AddressTableEntry::Hidden:
+            return QObject::tr("Hidden");
+        default:
+            return QObject::tr("Unknown");
+    }
 }
 
 // Private implementation
@@ -81,9 +97,8 @@ public:
         {
             for (const auto& address : wallet.getAddresses())
             {
-                if (pk_hash_only && !std::holds_alternative<PKHash>(address.dest)) {
+                if (pk_hash_only && address.dest.type() != typeid(PKHash))
                     continue;
-                }
                 AddressTableEntry::Type addressType = translateTransactionType(
                         QString::fromStdString(address.purpose), address.is_mine);
                 cachedAddressTable.append(AddressTableEntry(addressType,
@@ -177,17 +192,13 @@ AddressTableModel::~AddressTableModel()
 
 int AddressTableModel::rowCount(const QModelIndex &parent) const
 {
-    if (parent.isValid()) {
-        return 0;
-    }
+    Q_UNUSED(parent);
     return priv->size();
 }
 
 int AddressTableModel::columnCount(const QModelIndex &parent) const
 {
-    if (parent.isValid()) {
-        return 0;
-    }
+    Q_UNUSED(parent);
     return columns.length();
 }
 
@@ -198,38 +209,44 @@ QVariant AddressTableModel::data(const QModelIndex &index, int role) const
 
     AddressTableEntry *rec = static_cast<AddressTableEntry*>(index.internalPointer());
 
-    const auto column = static_cast<ColumnIndex>(index.column());
-    if (role == Qt::DisplayRole || role == Qt::EditRole) {
-        switch (column) {
+    if(role == Qt::DisplayRole || role == Qt::EditRole)
+    {
+        switch(index.column())
+        {
         case Label:
-            if (rec->label.isEmpty() && role == Qt::DisplayRole) {
+            if(rec->label.isEmpty() && role == Qt::DisplayRole)
+            {
                 return tr("(no label)");
-            } else {
+            }
+            else
+            {
                 return rec->label;
             }
         case Address:
             return rec->address;
-        } // no default case, so the compiler can warn about missing cases
-        assert(false);
-    } else if (role == Qt::FontRole) {
-        switch (column) {
-        case Label:
-            return QFont();
-        case Address:
-            return GUIUtil::fixedPitchFont();
-        } // no default case, so the compiler can warn about missing cases
-        assert(false);
-    } else if (role == TypeRole) {
+        case Type:
+            return translateTypeToString(rec->type);
+        }
+    }
+    else if (role == Qt::FontRole)
+    {
+        QFont font;
+        if(index.column() == Address)
+        {
+            font = GUIUtil::fixedPitchFont();
+        }
+        return font;
+    }
+    else if (role == TypeRole)
+    {
         switch(rec->type)
         {
         case AddressTableEntry::Sending:
             return Send;
         case AddressTableEntry::Receiving:
             return Receive;
-        case AddressTableEntry::Hidden:
-            return {};
-        } // no default case, so the compiler can warn about missing cases
-        assert(false);
+        default: break;
+        }
     }
     return QVariant();
 }
@@ -239,7 +256,18 @@ bool AddressTableModel::setData(const QModelIndex &index, const QVariant &value,
     if(!index.isValid())
         return false;
     AddressTableEntry *rec = static_cast<AddressTableEntry*>(index.internalPointer());
-    std::string strPurpose = (rec->type == AddressTableEntry::Sending ? "send" : "receive");
+    std::string strPurpose;
+    switch(rec->type)
+    {
+    case AddressTableEntry::Sending:
+        strPurpose = AddressBook::AddressBookPurpose::SEND;
+        break;
+    case AddressTableEntry::Receiving:
+    default:
+        strPurpose = AddressBook::AddressBookPurpose::RECEIVE;
+        break;
+    }
+
     editStatus = OK;
 
     if(role == Qt::EditRole)
@@ -257,7 +285,7 @@ bool AddressTableModel::setData(const QModelIndex &index, const QVariant &value,
         } else if(index.column() == Address) {
             CTxDestination newAddress = DecodeDestination(value.toString().toStdString());
             // Refuse to set invalid address, set error status and return false
-            if(std::get_if<CNoDestination>(&newAddress))
+            if(boost::get<CNoDestination>(&newAddress))
             {
                 editStatus = INVALID_ADDRESS;
                 return false;
@@ -312,7 +340,7 @@ Qt::ItemFlags AddressTableModel::flags(const QModelIndex &index) const
     // Can edit address and label for sending addresses,
     // and only label for receiving addresses.
     if(rec->type == AddressTableEntry::Sending ||
-      (rec->type == AddressTableEntry::Receiving && index.column()==Label))
+        (rec->type == AddressTableEntry::Receiving && index.column()==Label))
     {
         retval |= Qt::ItemIsEditable;
     }
@@ -365,7 +393,7 @@ QString AddressTableModel::addRow(const QString &type, const QString &label, con
         }
 
         // Add entry
-        walletModel->wallet().setAddressBook(DecodeDestination(strAddress), strLabel, "send");
+        walletModel->wallet().setAddressBook(DecodeDestination(strAddress), strLabel, AddressBook::AddressBookPurpose::SEND);
     }
     else if(type == Receive)
     {

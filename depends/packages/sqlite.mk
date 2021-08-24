@@ -10,7 +10,7 @@ $(package)_config_opts_linux=--with-pic
 endef
 
 define $(package)_preprocess_cmds
-  cp -f $(BASEDIR)/config.guess $(BASEDIR)/config.sub .
+  sed -i "s/PACKAGE_STRING='sqlite /PACKAGE_STRING='sqlite/" configure
 endef
 
 define $(package)_config_cmds

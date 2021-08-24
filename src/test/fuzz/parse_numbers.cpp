@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2020 The Bitcoin Core developers
+// Copyright (c) 2009-2019 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,20 +8,15 @@
 
 #include <string>
 
-FUZZ_TARGET(parse_numbers)
+void test_one_input(const std::vector<uint8_t>& buffer)
 {
     const std::string random_string(buffer.begin(), buffer.end());
 
-    (void)ParseMoney(random_string);
+    CAmount amount;
+    (void)ParseMoney(random_string, amount);
 
     double d;
     (void)ParseDouble(random_string, &d);
-
-    uint8_t u8;
-    (void)ParseUInt8(random_string, &u8);
-
-    uint16_t u16;
-    (void)ParseUInt16(random_string, &u16);
 
     int32_t i32;
     (void)ParseInt32(random_string, &i32);

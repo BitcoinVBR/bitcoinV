@@ -3,14 +3,14 @@
 *.exe
 *.pdb
 src/bitcoin
-src/bitcoind
-src/bitcoin-cli
-src/bitcoin-gui
-src/bitcoin-node
-src/bitcoin-tx
-src/bitcoin-util
-src/bitcoin-wallet
-src/test/fuzz/fuzz
+src/bitcoinv-posd
+src/bitcoinv-pos-cli
+src/bitcoinv-pos-gui
+src/bitcoinv-pos-node
+src/bitcoinv-pos-tx
+src/bitcoinv-pos-wallet
+src/test/fuzz/*
+!src/test/fuzz/*.*
 src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
 
@@ -61,7 +61,7 @@ src/qt/bitcoin-qt.includes
 .dirstamp
 .libs
 .*.swp
-*~
+*.*~*
 *.bak
 *.rej
 *.orig
@@ -76,7 +76,6 @@ src/qt/bitcoin-qt.includes
 *.log
 *.trs
 *.dmg
-*.iso
 
 *.json.h
 *.raw.h
@@ -93,8 +92,8 @@ src/qt/bitcoin-qt.includes
 *.qm
 Makefile
 !depends/Makefile
-src/qt/bitcoin-qt
-Bitcoin-Qt.app
+src/qt/bitcoinv-pos-qt
+BitcoinV-POS-Qt.app
 background.tiff*
 
 # Qt Creator
@@ -144,10 +143,8 @@ contrib/devtools/split-debug.sh
 db4/
 
 # clang-check
-*.plist
+#*.plist
 
 osx_volname
 dist/
 *.background.tiff
-
-/guix-build-*

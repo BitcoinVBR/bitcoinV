@@ -17,13 +17,13 @@
 #include <cassert>
 #include <string>
 
-void initialize_block()
+void initialize()
 {
     static const ECCVerifyHandle verify_handle;
     SelectParams(CBaseChainParams::REGTEST);
 }
 
-FUZZ_TARGET_INIT(block, initialize_block)
+void test_one_input(const std::vector<uint8_t>& buffer)
 {
     CDataStream ds(buffer, SER_NETWORK, INIT_PROTO_VERSION);
     CBlock block;

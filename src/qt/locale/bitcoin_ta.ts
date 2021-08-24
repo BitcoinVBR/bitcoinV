@@ -478,6 +478,15 @@
         <translation>தேதி வரை</translation>
     </message>
     <message>
+        <source>&amp;Load PSBT from file...</source>
+        <translation>118&amp; கோப்பிலிருந்து PSBT ஐ ஏற்றவும் ..</translation>
+    </message>
+    <message>
+        <source>Load Partially Signed Bitcoin Transaction</source>
+        <translation> ஓரளவு கையொப்பமிடப்பட்ட பிட்காயின் பரிவர்த்தனையை ஏற்றவும்
+</translation>
+    </message>
+    <message>
         <source>Node window</source>
         <translation>நோட் விண்டோ</translation>
     </message>
@@ -830,7 +839,7 @@
         <source>Create</source>
         <translation>உருவாக்கு</translation>
     </message>
-</context>
+    </context>
 <context>
     <name>EditAddressDialog</name>
     <message>

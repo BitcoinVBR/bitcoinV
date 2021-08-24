@@ -23,7 +23,7 @@
     </message>
     <message>
         <source>C&amp;lose</source>
-        <translation>C&amp;hiudi</translation>
+        <translation>Chiudi</translation>
     </message>
     <message>
         <source>Delete the currently selected address from the list</source>
@@ -31,11 +31,11 @@
     </message>
     <message>
         <source>Enter address or label to search</source>
-        <translation>Inserisci un indirizzo o un'etichetta da cercare</translation>
+        <translation>Inserisci indirizzo o nominativo da cercare</translation>
     </message>
     <message>
         <source>Export the data in the current tab to a file</source>
-        <translation>Esporta su file i dati contenuti nella tabella corrente</translation>
+        <translation>Trasferisci i dati contenuti nella tabella corrente in un file</translation>
     </message>
     <message>
         <source>&amp;Export</source>
@@ -47,15 +47,15 @@
     </message>
     <message>
         <source>Choose the address to send coins to</source>
-        <translation>Scegli l'indirizzo a cui inviare bitcoin</translation>
+        <translation>Scegli l'indirizzo al quale inviare bitcoin</translation>
     </message>
     <message>
         <source>Choose the address to receive coins with</source>
-        <translation>Scegli l'indirizzo su cui ricevere bitcoin.</translation>
+        <translation>Scegli l'indirizzo al quale ricevere bitcoin.</translation>
     </message>
     <message>
         <source>C&amp;hoose</source>
-        <translation>Sc&amp;egli</translation>
+        <translation>Scegli</translation>
     </message>
     <message>
         <source>Sending addresses</source>
@@ -884,7 +884,7 @@ E' possibile firmare solo con indirizzi di tipo "legacy".</translation>
         <source>Create</source>
         <translation>Crea</translation>
     </message>
-</context>
+    </context>
 <context>
     <name>EditAddressDialog</name>
     <message>
@@ -3989,10 +3989,6 @@ Vai su File &gt; Apri Portafoglio per caricare un portafoglio.
     <message>
         <source>%s is set very high!</source>
         <translation>%s ha un'impostazione molto alta!</translation>
-    </message>
-    <message>
-        <source>Error loading wallet %s. Duplicate -wallet filename specified.</source>
-        <translation>Errore caricamento portafoglio %s. Il nome file -wallet specificato è duplicato.</translation>
     </message>
     <message>
         <source>Starting network threads...</source>

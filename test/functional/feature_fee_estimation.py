@@ -6,29 +6,13 @@
 from decimal import Decimal
 import random
 
-from test_framework.messages import (
-    COIN,
-    COutPoint,
-    CTransaction,
-    CTxIn,
-    CTxOut,
-)
-from test_framework.script import (
-    CScript,
-    OP_1,
-    OP_2,
-    OP_DROP,
-    OP_TRUE,
-)
-from test_framework.script_util import (
-    script_to_p2sh_script,
-)
+from test_framework.messages import CTransaction, CTxIn, CTxOut, COutPoint, ToHex, COIN
+from test_framework.script import CScript, OP_1, OP_DROP, OP_2, OP_HASH160, OP_EQUAL, hash160, OP_TRUE
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_greater_than,
     assert_greater_than_or_equal,
-    assert_raises_rpc_error,
     satoshi_round,
 )
 
@@ -37,8 +21,8 @@ from test_framework.util import (
 # time signing.
 REDEEM_SCRIPT_1 = CScript([OP_1, OP_DROP])
 REDEEM_SCRIPT_2 = CScript([OP_2, OP_DROP])
-P2SH_1 = script_to_p2sh_script(REDEEM_SCRIPT_1)
-P2SH_2 = script_to_p2sh_script(REDEEM_SCRIPT_2)
+P2SH_1 = CScript([OP_HASH160, hash160(REDEEM_SCRIPT_1), OP_EQUAL])
+P2SH_2 = CScript([OP_HASH160, hash160(REDEEM_SCRIPT_2), OP_EQUAL])
 
 # Associated ScriptSig's to spend satisfy P2SH_1 and P2SH_2
 SCRIPT_SIG = [CScript([OP_TRUE, REDEEM_SCRIPT_1]), CScript([OP_TRUE, REDEEM_SCRIPT_2])]
@@ -72,18 +56,18 @@ def small_txpuzzle_randfee(from_node, conflist, unconflist, amount, min_fee, fee
             total_in += t["amount"]
             tx.vin.append(CTxIn(COutPoint(int(t["txid"], 16), t["vout"]), b""))
         if total_in <= amount + fee:
-            raise RuntimeError(f"Insufficient funds: need {amount + fee}, have {total_in}")
+            raise RuntimeError("Insufficient funds: need %d, have %d" % (amount + fee, total_in))
     tx.vout.append(CTxOut(int((total_in - amount - fee) * COIN), P2SH_1))
     tx.vout.append(CTxOut(int(amount * COIN), P2SH_2))
     # These transactions don't need to be signed, but we still have to insert
     # the ScriptSig that will satisfy the ScriptPubKey.
     for inp in tx.vin:
         inp.scriptSig = SCRIPT_SIG[inp.prevout.n]
-    txid = from_node.sendrawtransaction(hexstring=tx.serialize().hex(), maxfeerate=0)
+    txid = from_node.sendrawtransaction(hexstring=ToHex(tx), maxfeerate=0)
     unconflist.append({"txid": txid, "vout": 0, "amount": total_in - amount - fee})
     unconflist.append({"txid": txid, "vout": 1, "amount": amount})
 
-    return (tx.serialize().hex(), fee)
+    return (ToHex(tx), fee)
 
 
 def split_inputs(from_node, txins, txouts, initial_split=False):
@@ -106,10 +90,10 @@ def split_inputs(from_node, txins, txouts, initial_split=False):
     # If this is the initial split we actually need to sign the transaction
     # Otherwise we just need to insert the proper ScriptSig
     if (initial_split):
-        completetx = from_node.signrawtransactionwithwallet(tx.serialize().hex())["hex"]
+        completetx = from_node.signrawtransactionwithwallet(ToHex(tx))["hex"]
     else:
         tx.vin[0].scriptSig = SCRIPT_SIG[prevtxout["vout"]]
-        completetx = tx.serialize().hex()
+        completetx = ToHex(tx)
     txid = from_node.sendrawtransaction(hexstring=completetx, maxfeerate=0)
     txouts.append({"txid": txid, "vout": 0, "amount": half_change})
     txouts.append({"txid": txid, "vout": 1, "amount": rem_change})
@@ -124,7 +108,8 @@ def check_raw_estimates(node, fees_seen):
             assert_greater_than(feerate, 0)
 
             if feerate + delta < min(fees_seen) or feerate - delta > max(fees_seen):
-                raise AssertionError(f"Estimated fee ({feerate}) out of range ({min(fees_seen)},{max(fees_seen)})")
+                raise AssertionError("Estimated fee (%f) out of range (%f,%f)"
+                                     % (feerate, min(fees_seen), max(fees_seen)))
 
 def check_smart_estimates(node, fees_seen):
     """Call estimatesmartfee and verify that the estimates meet certain invariants."""
@@ -137,9 +122,11 @@ def check_smart_estimates(node, fees_seen):
         assert_greater_than(feerate, 0)
 
         if feerate + delta < min(fees_seen) or feerate - delta > max(fees_seen):
-            raise AssertionError(f"Estimated fee ({feerate}) out of range ({min(fees_seen)},{max(fees_seen)})")
+            raise AssertionError("Estimated fee (%f) out of range (%f,%f)"
+                                 % (feerate, min(fees_seen), max(fees_seen)))
         if feerate - delta > last_feerate:
-            raise AssertionError(f"Estimated fee ({feerate}) larger than last fee ({last_feerate}) for lower number of confirms")
+            raise AssertionError("Estimated fee (%f) larger than last fee (%f) for lower number of confirms"
+                                 % (feerate, last_feerate))
         last_feerate = feerate
 
         if i == 0:
@@ -274,11 +261,6 @@ class EstimateFeeTest(BitcoinTestFramework):
         self.sync_blocks(self.nodes[0:3], wait=.1)
         self.log.info("Final estimates after emptying mempools")
         check_estimates(self.nodes[1], self.fees_per_kb)
-
-        self.log.info("Testing that fee estimation is disabled in blocksonly.")
-        self.restart_node(0, ["-blocksonly"])
-        assert_raises_rpc_error(-32603, "Fee estimation disabled",
-                                self.nodes[0].estimatesmartfee, 2)
 
 
 if __name__ == '__main__':

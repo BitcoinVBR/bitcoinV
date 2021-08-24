@@ -32,7 +32,7 @@ struct DumbCheck {
 };
 } // namespace
 
-FUZZ_TARGET(checkqueue)
+void test_one_input(const std::vector<uint8_t>& buffer)
 {
     FuzzedDataProvider fuzzed_data_provider(buffer.data(), buffer.size());
 

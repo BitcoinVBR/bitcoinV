@@ -5,6 +5,7 @@
 """Helpful routines for regression testing."""
 
 from base64 import b64encode
+from binascii import unhexlify
 from decimal import Decimal, ROUND_DOWN
 from subprocess import CalledProcessError
 import hashlib
@@ -18,7 +19,7 @@ import unittest
 
 from . import coverage
 from .authproxy import AuthServiceProxy, JSONRPCException
-from typing import Callable, Optional
+from io import BytesIO
 
 logger = logging.getLogger("TestFramework.utils")
 
@@ -38,10 +39,10 @@ def assert_fee_amount(fee, tx_size, fee_per_kB):
     """Assert the fee was in range"""
     target_fee = round(tx_size * fee_per_kB / 1000, 8)
     if fee < target_fee:
-        raise AssertionError("Fee of %s BTC too low! (Should be %s BTC)" % (str(fee), str(target_fee)))
+        raise AssertionError("Fee of %s BTCV too low! (Should be %s BTCV)" % (str(fee), str(target_fee)))
     # allow the wallet's estimation to be at most 2 bytes off
     if fee > (tx_size + 2) * fee_per_kB / 1000:
-        raise AssertionError("Fee of %s BTC too high! (Should be %s BTC)" % (str(fee), str(target_fee)))
+        raise AssertionError("Fee of %s BTCV too high! (Should be %s BTCV)" % (str(fee), str(target_fee)))
 
 
 def assert_equal(thing1, thing2, *args):
@@ -79,7 +80,7 @@ def assert_raises_message(exc, message, fun, *args, **kwds):
         raise AssertionError("No exception raised")
 
 
-def assert_raises_process_error(returncode: int, output: str, fun: Callable, *args, **kwds):
+def assert_raises_process_error(returncode, output, fun, *args, **kwds):
     """Execute a process and asserts the process return code and output.
 
     Calls function `fun` with arguments `args` and `kwds`. Catches a CalledProcessError
@@ -87,9 +88,9 @@ def assert_raises_process_error(returncode: int, output: str, fun: Callable, *ar
     no CalledProcessError was raised or if the return code and output are not as expected.
 
     Args:
-        returncode: the process return code.
-        output: [a substring of] the process output.
-        fun: the function to call. This should execute a process.
+        returncode (int): the process return code.
+        output (string): [a substring of] the process output.
+        fun (function): the function to call. This should execute a process.
         args*: positional arguments for the function.
         kwds**: named arguments for the function.
     """
@@ -104,7 +105,7 @@ def assert_raises_process_error(returncode: int, output: str, fun: Callable, *ar
         raise AssertionError("No exception raised")
 
 
-def assert_raises_rpc_error(code: Optional[int], message: Optional[str], fun: Callable, *args, **kwds):
+def assert_raises_rpc_error(code, message, fun, *args, **kwds):
     """Run an RPC and verify that a specific JSONRPC exception code and message is raised.
 
     Calls function `fun` with arguments `args` and `kwds`. Catches a JSONRPCException
@@ -112,11 +113,11 @@ def assert_raises_rpc_error(code: Optional[int], message: Optional[str], fun: Ca
     no JSONRPCException was raised or if the error code/message are not as expected.
 
     Args:
-        code: the error code returned by the RPC call (defined in src/rpc/protocol.h).
-            Set to None if checking the error code is not required.
-        message: [a substring of] the error string returned by the RPC call.
-            Set to None if checking the error string is not required.
-        fun: the function to call. This should be the name of an RPC.
+        code (int), optional: the error code returned by the RPC call (defined
+            in src/rpc/protocol.h). Set to None if checking the error code is not required.
+        message (string), optional: [a substring of] the error string returned by the
+            RPC call. Set to None if checking the error string is not required.
+        fun (function): the function to call. This should be the name of an RPC.
         args*: positional arguments for the function.
         kwds**: named arguments for the function.
     """
@@ -196,7 +197,7 @@ def assert_array_result(object_array, to_match, expected, should_not_find=False)
 
 
 def check_json_precision():
-    """Make sure json library being used does not lose precision converting BTC values"""
+    """Make sure json library being used does not lose precision converting BTCV values"""
     n = Decimal("20000000.00000003")
     satoshis = int(json.loads(json.dumps(float(n))) * 1.0e8)
     if satoshis != 2000000000000003:
@@ -211,6 +212,10 @@ def EncodeDecimal(o):
 
 def count_bytes(hex_string):
     return len(bytearray.fromhex(hex_string))
+
+
+def hex_str_to_bytes(hex_str):
+    return unhexlify(hex_str.encode('ascii'))
 
 
 def str_to_b64str(string):
@@ -281,15 +286,15 @@ class PortSeed:
     n = None
 
 
-def get_rpc_proxy(url: str, node_number: int, *, timeout: int=None, coveragedir: str=None) -> coverage.AuthServiceProxyWrapper:
+def get_rpc_proxy(url, node_number, *, timeout=None, coveragedir=None):
     """
     Args:
-        url: URL of the RPC server to call
-        node_number: the node number (or id) that this calls to
+        url (str): URL of the RPC server to call
+        node_number (int): the node number (or id) that this calls to
 
     Kwargs:
-        timeout: HTTP timeout in seconds
-        coveragedir: Directory
+        timeout (int): HTTP timeout in seconds
+        coveragedir (str): Directory
 
     Returns:
         AuthServiceProxy. convenience object for making RPC calls.
@@ -300,10 +305,11 @@ def get_rpc_proxy(url: str, node_number: int, *, timeout: int=None, coveragedir:
         proxy_kwargs['timeout'] = int(timeout)
 
     proxy = AuthServiceProxy(url, **proxy_kwargs)
+    proxy.url = url  # store URL on proxy for info
 
     coverage_logfile = coverage.get_filename(coveragedir, node_number) if coveragedir else None
 
-    return coverage.AuthServiceProxyWrapper(proxy, url, coverage_logfile)
+    return coverage.AuthServiceProxyWrapper(proxy, coverage_logfile)
 
 
 def p2p_port(n):
@@ -332,29 +338,20 @@ def rpc_url(datadir, i, chain, rpchost):
 ################
 
 
-def initialize_datadir(dirname, n, chain, disable_autoconnect=True):
+def initialize_datadir(dirname, n, chain):
     datadir = get_datadir_path(dirname, n)
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
-    write_config(os.path.join(datadir, "bitcoin.conf"), n=n, chain=chain, disable_autoconnect=disable_autoconnect)
-    os.makedirs(os.path.join(datadir, 'stderr'), exist_ok=True)
-    os.makedirs(os.path.join(datadir, 'stdout'), exist_ok=True)
-    return datadir
-
-
-def write_config(config_path, *, n, chain, extra_config="", disable_autoconnect=True):
-    # Translate chain subdirectory name to config name
+    # Translate chain name to config name
     if chain == 'testnet3':
         chain_name_conf_arg = 'testnet'
         chain_name_conf_section = 'test'
     else:
         chain_name_conf_arg = chain
         chain_name_conf_section = chain
-    with open(config_path, 'w', encoding='utf8') as f:
-        if chain_name_conf_arg:
-            f.write("{}=1\n".format(chain_name_conf_arg))
-        if chain_name_conf_section:
-            f.write("[{}]\n".format(chain_name_conf_section))
+    with open(os.path.join(datadir, "bitcoin.conf"), 'w', encoding='utf8') as f:
+        f.write("{}=1\n".format(chain_name_conf_arg))
+        f.write("[{}]\n".format(chain_name_conf_section))
         f.write("port=" + str(p2p_port(n)) + "\n")
         f.write("rpcport=" + str(rpc_port(n)) + "\n")
         f.write("fallbackfee=0.0002\n")
@@ -362,17 +359,13 @@ def write_config(config_path, *, n, chain, extra_config="", disable_autoconnect=
         f.write("keypool=1\n")
         f.write("discover=0\n")
         f.write("dnsseed=0\n")
-        f.write("fixedseeds=0\n")
         f.write("listenonion=0\n")
         f.write("printtoconsole=0\n")
         f.write("upnp=0\n")
-        f.write("natpmp=0\n")
         f.write("shrinkdebugfile=0\n")
-        # To improve SQLite wallet performance so that the tests don't timeout, use -unsafesqlitesync
-        f.write("unsafesqlitesync=1\n")
-        if disable_autoconnect:
-            f.write("connect=0\n")
-        f.write(extra_config)
+        os.makedirs(os.path.join(datadir, 'stderr'), exist_ok=True)
+        os.makedirs(os.path.join(datadir, 'stdout'), exist_ok=True)
+    return datadir
 
 
 def get_datadir_path(dirname, n):
@@ -476,28 +469,6 @@ def create_confirmed_utxos(fee, node, count):
     return utxos
 
 
-def chain_transaction(node, parent_txids, vouts, value, fee, num_outputs):
-    """Build and send a transaction that spends the given inputs (specified
-    by lists of parent_txid:vout each), with the desired total value and fee,
-    equally divided up to the desired number of outputs.
-
-    Returns a tuple with the txid and the amount sent per output.
-    """
-    send_value = satoshi_round((value - fee)/num_outputs)
-    inputs = []
-    for (txid, vout) in zip(parent_txids, vouts):
-        inputs.append({'txid' : txid, 'vout' : vout})
-    outputs = {}
-    for _ in range(num_outputs):
-        outputs[node.getnewaddress()] = send_value
-    rawtx = node.createrawtransaction(inputs, outputs, 0, True)
-    signedtx = node.signrawtransactionwithwallet(rawtx)
-    txid = node.sendrawtransaction(signedtx['hex'])
-    fulltx = node.getrawtransaction(txid, 1)
-    assert len(fulltx['vout']) == num_outputs  # make sure we didn't generate a change output
-    return (txid, send_value)
-
-
 # Create large OP_RETURN txouts that can be appended to a transaction
 # to make it large (helper for constructing large transactions).
 def gen_return_txouts():
@@ -512,7 +483,7 @@ def gen_return_txouts():
     from .messages import CTxOut
     txout = CTxOut()
     txout.nValue = 0
-    txout.scriptPubKey = bytes.fromhex(script_pubkey)
+    txout.scriptPubKey = hex_str_to_bytes(script_pubkey)
     for _ in range(128):
         txouts.append(txout)
     return txouts
@@ -523,7 +494,7 @@ def gen_return_txouts():
 def create_lots_of_big_transactions(node, txouts, utxos, num, fee):
     addr = node.getnewaddress()
     txids = []
-    from .messages import tx_from_hex
+    from .messages import CTransaction
     for _ in range(num):
         t = utxos.pop()
         inputs = [{"txid": t["txid"], "vout": t["vout"]}]
@@ -531,7 +502,8 @@ def create_lots_of_big_transactions(node, txouts, utxos, num, fee):
         change = t['amount'] - fee
         outputs[addr] = satoshi_round(change)
         rawtx = node.createrawtransaction(inputs, outputs)
-        tx = tx_from_hex(rawtx)
+        tx = CTransaction()
+        tx.deserialize(BytesIO(hex_str_to_bytes(rawtx)))
         for txout in txouts:
             tx.vout.append(txout)
         newtx = tx.serialize().hex()
@@ -555,17 +527,6 @@ def mine_large_block(node, utxos=None):
     node.generate(1)
 
 
-def generate_to_height(node, target_height):
-    """Generates blocks until a given target block height has been reached.
-       To prevent timeouts, only up to 200 blocks are generated per RPC call.
-       Can be used to activate certain soft-forks (e.g. CSV, CLTV)."""
-    current_height = node.getblockcount()
-    while current_height < target_height:
-        nblocks = min(200, target_height - current_height)
-        current_height += len(node.generate(nblocks))
-    assert_equal(node.getblockcount(), target_height)
-
-
 def find_vout_for_address(node, txid, addr):
     """
     Locate the vout index of the given transaction sending to the
@@ -573,7 +534,7 @@ def find_vout_for_address(node, txid, addr):
     """
     tx = node.getrawtransaction(txid, True)
     for i in range(len(tx["vout"])):
-        if addr == tx["vout"][i]["scriptPubKey"]["address"]:
+        if any([addr == a for a in tx["vout"][i]["scriptPubKey"]["addresses"]]):
             return i
     raise RuntimeError("Vout not found for address: txid=%s, addr=%s" % (txid, addr))
 

@@ -14,7 +14,13 @@
 
 static void DuplicateInputs(benchmark::Bench& bench)
 {
-    const auto testing_setup = MakeNoLogFileContext<const TestingSetup>();
+    TestingSetup test_setup{
+        CBaseChainParams::REGTEST,
+        /* extra_args */ {
+            "-nodebuglogfile",
+            "-nodebug",
+        },
+    };
 
     const CScript SCRIPT_PUB{CScript(OP_TRUE)};
 
@@ -25,7 +31,7 @@ static void DuplicateInputs(benchmark::Bench& bench)
     CMutableTransaction naughtyTx{};
 
     LOCK(cs_main);
-    CBlockIndex* pindexPrev = testing_setup->m_node.chainman->ActiveChain().Tip();
+    CBlockIndex* pindexPrev = ::ChainActive().Tip();
     assert(pindexPrev != nullptr);
     block.nBits = GetNextWorkRequired(pindexPrev, &block, chainparams.GetConsensus());
     block.nNonce = 0;

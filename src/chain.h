@@ -143,6 +143,9 @@ public:
     //! pointer to the index of the predecessor of this block
     CBlockIndex* pprev{nullptr};
 
+    //! pointer to the index of the successor of this block
+    CBlockIndex* pnext;
+
     //! pointer to the index of some further predecessor of this block
     CBlockIndex* pskip{nullptr};
 
@@ -163,27 +166,14 @@ public:
 
     //! Number of transactions in this block.
     //! Note: in a potential headers-first mode, this number cannot be relied upon
-    //! Note: this value is faked during UTXO snapshot load to ensure that
-    //! LoadBlockIndex() will load index entries for blocks that we lack data for.
-    //! @sa ActivateSnapshot
     unsigned int nTx{0};
 
     //! (memory only) Number of transactions in the chain up to and including this block.
     //! This value will be non-zero only if and only if transactions for this block and all its parents are available.
     //! Change to 64-bit type when necessary; won't happen before 2030
-    //!
-    //! Note: this value is faked during use of a UTXO snapshot because we don't
-    //! have the underlying block data available during snapshot load.
-    //! @sa AssumeutxoData
-    //! @sa ActivateSnapshot
     unsigned int nChainTx{0};
 
     //! Verification status of this block. See enum BlockStatus
-    //!
-    //! Note: this value is modified to show BLOCK_OPT_WITNESS during UTXO snapshot
-    //! load to avoid the block index being spuriously rewound.
-    //! @sa NeedsRedownload
-    //! @sa ActivateSnapshot
     uint32_t nStatus{0};
 
     //! block header
@@ -193,11 +183,48 @@ public:
     uint32_t nBits{0};
     uint32_t nNonce{0};
 
+    // Proof of stake
+    COutPoint prevoutStake;
+    // block signature - proof-of-stake protect the block by signing the block using a stake holder private key
+    std::vector<unsigned char> vchBlockSig;
+    uint256 nStakeModifier;
+    uint256 hashProof;
+    uint64_t nMoneySupply;
+
     //! (memory only) Sequential id assigned to distinguish order in which blocks are received.
     int32_t nSequenceId{0};
 
     //! (memory only) Maximum nTime in the chain up to and including this block.
     unsigned int nTimeMax{0};
+
+    void SetNull()
+    {
+        phashBlock = nullptr;
+        pprev = nullptr;
+        pnext = nullptr;
+        pskip = nullptr;
+        nHeight = 0;
+        nFile = 0;
+        nDataPos = 0;
+        nUndoPos = 0;
+        nChainWork = arith_uint256();
+        nTx = 0;
+        nChainTx = 0;
+        nStatus = 0;
+        nSequenceId = 0;
+        nTimeMax = 0;
+
+        nVersion       = 0;
+        hashMerkleRoot = uint256();
+        nTime          = 0;
+        nBits          = 0;
+        nNonce         = 0;
+        prevoutStake.SetNull();
+        vchBlockSig.clear();
+        nStakeModifier = uint256();
+        hashProof = uint256();
+        nMoneySupply = 0;
+    }
 
     CBlockIndex()
     {
@@ -210,6 +237,18 @@ public:
           nBits{block.nBits},
           nNonce{block.nNonce}
     {
+        SetNull();
+
+        nVersion       = block.nVersion;
+        hashMerkleRoot = block.hashMerkleRoot;
+        nTime          = block.nTime;
+        nBits          = block.nBits;
+        nNonce         = block.nNonce;
+        prevoutStake   = block.prevoutStake;
+        vchBlockSig    = block.vchBlockSig;
+        nStakeModifier = uint256();
+        hashProof = uint256(); 
+        nMoneySupply   = 0;
     }
 
     FlatFilePos GetBlockPos() const {
@@ -240,6 +279,8 @@ public:
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
+        block.vchBlockSig    = vchBlockSig;
+        block.prevoutStake   = prevoutStake;
         return block;
     }
 
@@ -281,6 +322,16 @@ public:
 
         std::sort(pbegin, pend);
         return pbegin[(pend - pbegin)/2];
+    }
+
+    bool IsProofOfWork() const
+    {
+        return !IsProofOfStake();
+    }
+
+    bool IsProofOfStake() const
+    {
+        return !prevoutStake.IsNull();
     }
 
     std::string ToString() const
@@ -362,6 +413,11 @@ public:
         READWRITE(obj.nTime);
         READWRITE(obj.nBits);
         READWRITE(obj.nNonce);
+        READWRITE(obj.prevoutStake);
+        READWRITE(obj.vchBlockSig);
+        READWRITE(obj.nStakeModifier);
+        READWRITE(obj.hashProof);
+        READWRITE(VARINT(obj.nMoneySupply));
     }
 
     uint256 GetBlockHash() const
@@ -373,6 +429,8 @@ public:
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;
+        block.prevoutStake    = prevoutStake;
+        block.vchBlockSig     = vchBlockSig;
         return block.GetHash();
     }
 

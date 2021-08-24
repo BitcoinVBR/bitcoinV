@@ -4,6 +4,9 @@
 
 #include <chainparams.h>
 #include <key_io.h>
+#include <rpc/util.h>
+#include <script/signingprovider.h>
+#include <script/standard.h>
 #include <test/fuzz/fuzz.h>
 
 #include <cassert>
@@ -11,14 +14,14 @@
 #include <string>
 #include <vector>
 
-void initialize_key_io()
+void initialize()
 {
     static const ECCVerifyHandle verify_handle;
     ECC_Start();
     SelectParams(CBaseChainParams::MAIN);
 }
 
-FUZZ_TARGET_INIT(key_io, initialize_key_io)
+void test_one_input(const std::vector<uint8_t>& buffer)
 {
     const std::string random_string(buffer.begin(), buffer.end());
 
@@ -36,4 +39,12 @@ FUZZ_TARGET_INIT(key_io, initialize_key_io)
     if (ext_pub_key.pubkey.size() == CPubKey::COMPRESSED_SIZE) {
         assert(ext_pub_key == DecodeExtPubKey(EncodeExtPubKey(ext_pub_key)));
     }
+
+    const CTxDestination tx_destination = DecodeDestination(random_string);
+    (void)DescribeAddress(tx_destination);
+    (void)GetKeyForDestination(/* store */ {}, tx_destination);
+    (void)GetScriptForDestination(tx_destination);
+    (void)IsValidDestination(tx_destination);
+
+    (void)IsValidDestinationString(random_string);
 }

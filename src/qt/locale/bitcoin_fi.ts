@@ -884,6 +884,10 @@ Allekirjoitus on mahdollista vain 'legacy'-tyyppisillä osoitteilla.</translatio
         <source>Create</source>
         <translation>Luo</translation>
     </message>
+    <message>
+        <source>Compiled without sqlite support (required for descriptor wallets)</source>
+        <translation>Koostettu ilman sqlite-tukea (vaaditaan descriptor-lompakoille)</translation>
+    </message>
 </context>
 <context>
     <name>EditAddressDialog</name>
@@ -3692,6 +3696,10 @@ Siirry osioon Tiedosto &gt; Avaa lompakko ladataksesi lompakon.
         <translation>Tietokannan todennus epäonnistui</translation>
     </message>
     <message>
+        <source>Ignoring duplicate -wallet %s.</source>
+        <translation>Ohitetaan kaksois -lompakko %s.</translation>
+    </message>
+    <message>
         <source>Importing...</source>
         <translation>Tuodaan...</translation>
     </message>
@@ -3996,10 +4004,6 @@ Siirry osioon Tiedosto &gt; Avaa lompakko ladataksesi lompakon.
     <message>
         <source>%s is set very high!</source>
         <translation>%s on asetettu todella korkeaksi!</translation>
-    </message>
-    <message>
-        <source>Error loading wallet %s. Duplicate -wallet filename specified.</source>
-        <translation>Virhe ladattaessa lompakkoa %s. -wallet -tiedostonimi esiintyy useaan kertaan.</translation>
     </message>
     <message>
         <source>Starting network threads...</source>

@@ -52,9 +52,9 @@ static RPCHelpMan getzmqnotifications()
 }
 
 const CRPCCommand commands[] =
-{ //  category           actor (function)
-  //  -----------------  -----------------------
-    { "zmq",             &getzmqnotifications,    },
+{ //  category              name                                actor (function)                argNames
+  //  -----------------     ------------------------            -----------------------         ----------
+    { "zmq",                "getzmqnotifications",              &getzmqnotifications,           {} },
 };
 
 } // anonymous namespace

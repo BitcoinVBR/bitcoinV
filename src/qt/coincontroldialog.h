@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2020 The Bitcoin Core developers
+// Copyright (c) 2011-2018 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -46,13 +46,10 @@ public:
     ~CoinControlDialog();
 
     // static because also called from sendcoinsdialog
-    static void updateLabels(CCoinControl& m_coin_control, WalletModel*, QDialog*);
+    static void updateLabels(CCoinControl& m_coin_control, WalletModel*, QDialog*, bool forDelegation = false);
 
     static QList<CAmount> payAmounts;
     static bool fSubtractFeeFromAmount;
-
-protected:
-    void changeEvent(QEvent* e) override;
 
 private:
     Ui::CoinControlDialog *ui;

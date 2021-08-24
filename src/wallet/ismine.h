@@ -14,34 +14,19 @@
 class CWallet;
 class CScript;
 
-/**
- * IsMine() return codes, which depend on ScriptPubKeyMan implementation.
- * Not every ScriptPubKeyMan covers all types, please refer to
- * https://github.com/bitcoin/bitcoin/blob/master/doc/release-notes/release-notes-0.21.0.md#ismine-semantics
- * for better understanding.
- *
- * For LegacyScriptPubKeyMan,
- * ISMINE_NO: the scriptPubKey is not in the wallet;
- * ISMINE_WATCH_ONLY: the scriptPubKey has been imported into the wallet;
- * ISMINE_SPENDABLE: the scriptPubKey corresponds to an address owned by the wallet user (can spend with the private key);
- * ISMINE_USED: the scriptPubKey corresponds to a used address owned by the wallet user;
- * ISMINE_ALL: all ISMINE flags except for USED;
- * ISMINE_ALL_USED: all ISMINE flags including USED;
- * ISMINE_ENUM_ELEMENTS: the number of isminetype enum elements.
- *
- * For DescriptorScriptPubKeyMan and future ScriptPubKeyMan,
- * ISMINE_NO: the scriptPubKey is not in the wallet;
- * ISMINE_SPENDABLE: the scriptPubKey matches a scriptPubKey in the wallet.
- * ISMINE_USED: the scriptPubKey corresponds to a used address owned by the wallet user.
- *
- */
+/** IsMine() return codes */
 enum isminetype : unsigned int
 {
     ISMINE_NO         = 0,
     ISMINE_WATCH_ONLY = 1 << 0,
     ISMINE_SPENDABLE  = 1 << 1,
     ISMINE_USED       = 1 << 2,
-    ISMINE_ALL        = ISMINE_WATCH_ONLY | ISMINE_SPENDABLE,
+    //! Indicates that we have the staking key of a P2CS
+    ISMINE_COLD       = 1 << 3,
+    //! Indicates that we have the spending key of a P2CS
+    ISMINE_SPENDABLE_DELEGATED = 1 << 4,
+    ISMINE_SPENDABLE_ALL = ISMINE_SPENDABLE_DELEGATED | ISMINE_SPENDABLE,
+    ISMINE_ALL        = ISMINE_WATCH_ONLY | ISMINE_SPENDABLE | ISMINE_COLD | ISMINE_SPENDABLE_DELEGATED,
     ISMINE_ALL_USED   = ISMINE_ALL | ISMINE_USED,
     ISMINE_ENUM_ELEMENTS,
 };

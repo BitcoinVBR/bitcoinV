@@ -14,12 +14,7 @@
 #include <string>
 #include <vector>
 
-void initialize_base_encode_decode()
-{
-    static const ECCVerifyHandle verify_handle;
-}
-
-FUZZ_TARGET_INIT(base_encode_decode, initialize_base_encode_decode)
+void test_one_input(const std::vector<uint8_t>& buffer)
 {
     const std::string random_encoded_string(buffer.begin(), buffer.end());
 

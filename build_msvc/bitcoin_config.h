@@ -12,34 +12,31 @@
 #define CLIENT_VERSION_BUILD 0
 
 /* Version is release */
-#define CLIENT_VERSION_IS_RELEASE false
+#define CLIENT_VERSION_IS_RELEASE true
 
 /* Major version */
-#define CLIENT_VERSION_MAJOR 22
+#define CLIENT_VERSION_MAJOR 0
 
 /* Minor version */
-#define CLIENT_VERSION_MINOR 99
+#define CLIENT_VERSION_MINOR 21
+
+/* Build revision */
+#define CLIENT_VERSION_REVISION 0
 
 /* Copyright holder(s) before %s replacement */
 #define COPYRIGHT_HOLDERS "The %s developers"
 
 /* Copyright holder(s) */
-#define COPYRIGHT_HOLDERS_FINAL "The Bitcoin Core developers"
+#define COPYRIGHT_HOLDERS_FINAL "The BitcoinV PoS Core developers"
 
 /* Replacement for %s in copyright holders string */
-#define COPYRIGHT_HOLDERS_SUBSTITUTION "Bitcoin Core"
+#define COPYRIGHT_HOLDERS_SUBSTITUTION "BitcoinV PoS Core"
 
 /* Copyright year */
-#define COPYRIGHT_YEAR 2021
+#define COPYRIGHT_YEAR 2020
 
 /* Define to 1 to enable wallet functions */
 #define ENABLE_WALLET 1
-
-/* Define to 1 to enable BDB wallet */
-#define USE_BDB 1
-
-/* Define to 1 to enable SQLite wallet */
-#define USE_SQLITE 1
 
 /* Define to 1 to enable ZMQ functions */
 #define ENABLE_ZMQ 1
@@ -47,14 +44,20 @@
 /* define if the Boost library is available */
 #define HAVE_BOOST /**/
 
+/* define if the Boost::Chrono library is available */
+#define HAVE_BOOST_CHRONO /**/
+
 /* define if the Boost::Filesystem library is available */
 #define HAVE_BOOST_FILESYSTEM /**/
 
-/* define if external signer support is enabled (requires Boost::Process) */
-#define ENABLE_EXTERNAL_SIGNER /**/
+/* define if the Boost::Process library is available */
+#define HAVE_BOOST_PROCESS /**/
 
 /* define if the Boost::System library is available */
 #define HAVE_BOOST_SYSTEM /**/
+
+/* define if the Boost::Thread library is available */
+#define HAVE_BOOST_THREAD /**/
 
 /* define if the Boost::Unit_Test_Framework library is available */
 #define HAVE_BOOST_UNIT_TEST_FRAMEWORK /**/
@@ -92,9 +95,9 @@
    don't. */
 #define HAVE_DECL_BSWAP_64 0
 
-/* Define to 1 if you have the declaration of `fork', and to 0 if you don't.
+/* Define to 1 if you have the declaration of `daemon', and to 0 if you don't.
    */
-#define HAVE_DECL_FORK 0
+#define HAVE_DECL_DAEMON 0
 
 /* Define to 1 if you have the declaration of `htobe16', and to 0 if you
    don't. */
@@ -131,10 +134,6 @@
 /* Define to 1 if you have the declaration of `le64toh', and to 0 if you
    don't. */
 #define HAVE_DECL_LE64TOH 0
-
-/* Define to 1 if you have the declaration of `setsid', and to 0 if you don't.
-   */
-#define HAVE_DECL_SETSID 0
 
 /* Define to 1 if you have the declaration of `strerror_r', and to 0 if you
    don't. */
@@ -180,6 +179,9 @@
 
 /* Define to 1 if you have the <miniupnpc/miniupnpc.h> header file. */
 #define HAVE_MINIUPNPC_MINIUPNPC_H 1
+
+/* Define to 1 if you have the <miniupnpc/miniwget.h> header file. */
+#define HAVE_MINIUPNPC_MINIWGET_H 1
 
 /* Define to 1 if you have the <miniupnpc/upnpcommands.h> header file. */
 #define HAVE_MINIUPNPC_UPNPCOMMANDS_H 1
@@ -251,19 +253,19 @@
 #define PACKAGE_BUGREPORT "https://github.com/bitcoin/bitcoin/issues"
 
 /* Define to the full name of this package. */
-#define PACKAGE_NAME "Bitcoin Core"
+#define PACKAGE_NAME "BitcoinV PoS Core"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Bitcoin Core 22.99.0"
+#define PACKAGE_STRING "BitcoinV PoS Core 0.21.0"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "bitcoin"
+#define PACKAGE_TARNAME "bitcoinv-pos"
 
 /* Define to the home page for this package. */
-#define PACKAGE_URL "https://bitcoincore.org/"
+#define PACKAGE_URL "https://bitcoinv.org/"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "22.99.0"
+#define PACKAGE_VERSION "0.21.0"
 
 /* Define to necessary symbol if this constant uses a non-standard name on
    your system. */

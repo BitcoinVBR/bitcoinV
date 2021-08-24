@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 The Bitcoin Core developers
+// Copyright (c) 2011-2018 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,19 +8,20 @@
 #include <qt/addresstablemodel.h>
 #include <qt/guiutil.h>
 
+#include <addressbook.h>
+
 #include <QDataWidgetMapper>
 #include <QMessageBox>
 
 
 EditAddressDialog::EditAddressDialog(Mode _mode, QWidget *parent) :
-    QDialog(parent, GUIUtil::dialog_flags),
+    QDialog(parent),
     ui(new Ui::EditAddressDialog),
     mapper(nullptr),
     mode(_mode),
     model(nullptr)
 {
     ui->setupUi(this);
-
     GUIUtil::setupAddressWidget(ui->addressEdit, this);
 
     switch(mode)
@@ -141,7 +142,7 @@ QString EditAddressDialog::getDuplicateAddressWarning() const
     QString existing_label = model->labelForAddress(dup_address);
     QString existing_purpose = model->purposeForAddress(dup_address);
 
-    if (existing_purpose == "receive" &&
+    if (existing_purpose == QString::fromStdString(AddressBook::AddressBookPurpose::RECEIVE) &&
             (mode == NewSendingAddress || mode == EditSendingAddress)) {
         return tr(
             "Address \"%1\" already exists as a receiving address with label "

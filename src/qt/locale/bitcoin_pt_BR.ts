@@ -3,7 +3,7 @@
     <name>AddressBookPage</name>
     <message>
         <source>Right-click to edit address or label</source>
-        <translation>Right-click to edit address or label</translation>
+        <translation>Clique com o botão direito para editar endereço ou rótulo</translation>
     </message>
     <message>
         <source>Create a new address</source>
@@ -884,6 +884,10 @@ Somente é possível assinar com endereços do tipo 'legado'.</translation>
         <source>Create</source>
         <translation>Criar</translation>
     </message>
+    <message>
+        <source>Compiled without sqlite support (required for descriptor wallets)</source>
+        <translation>Compilado sem suporte a sqlite (requerido para carteiras descritoras)</translation>
+    </message>
 </context>
 <context>
     <name>EditAddressDialog</name>
@@ -1133,6 +1137,14 @@ Somente é possível assinar com endereços do tipo 'legado'.</translation>
 </context>
 <context>
     <name>OpenWalletActivity</name>
+    <message>
+        <source>Open wallet failed</source>
+        <translation>Abrir carteira falhou</translation>
+    </message>
+    <message>
+        <source>Open wallet warning</source>
+        <translation>Abrir carteira alerta</translation>
+    </message>
     <message>
         <source>Open wallet failed</source>
         <translation>Abrir carteira falhou</translation>
@@ -1648,6 +1660,14 @@ Somente é possível assinar com endereços do tipo 'legado'.</translation>
     <message>
         <source>Cannot process payment request because BIP70 is not supported.</source>
         <translation>O pagamento não pode ser processado porque a BIP70 não é suportada.</translation>
+    </message>
+    <message>
+        <source>Due to widespread security flaws in BIP70 it's strongly recommended that any merchant instructions to switch wallets be ignored.</source>
+        <translation>Devido a falha de segurança divulgada no BIP70 é fortemente recomendado que qualquer instrução para comerciantes para mudar de carteira seja ignorado</translation>
+    </message>
+    <message>
+        <source>If you are receiving this error you should request the merchant provide a BIP21 compatible URI.</source>
+        <translation>Se você está recebendo este erro você deve requisitar ao comerciante oferecer uma URI compatível com o BIP21.</translation>
     </message>
     <message>
         <source>Due to widespread security flaws in BIP70 it's strongly recommended that any merchant instructions to switch wallets be ignored.</source>
@@ -3702,6 +3722,10 @@ Go to File &gt; Open Wallet to load a wallet.
         <translation>Falha ao verificar a base de dados</translation>
     </message>
     <message>
+        <source>Ignoring duplicate -wallet %s.</source>
+        <translation>Ignorando -carteira %s duplicada.</translation>
+    </message>
+    <message>
         <source>Importing...</source>
         <translation>Importando...</translation>
     </message>
@@ -4015,10 +4039,6 @@ Diretório de blocos especificados "%s" não existe.</translation>
     <message>
         <source>%s is set very high!</source>
         <translation>%s está muito alto!</translation>
-    </message>
-    <message>
-        <source>Error loading wallet %s. Duplicate -wallet filename specified.</source>
-        <translation>Erro ao carregar carteira %s. Duplicado o nome do arquivo de -wallet.</translation>
     </message>
     <message>
         <source>Starting network threads...</source>

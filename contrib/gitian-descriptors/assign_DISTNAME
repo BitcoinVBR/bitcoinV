@@ -4,9 +4,4 @@
 #
 # A helper script to be sourced into the gitian descriptors
 
-if RECENT_TAG="$(git describe --exact-match HEAD 2> /dev/null)"; then
-    VERSION="${RECENT_TAG#v}"
-else
-    VERSION="$(git rev-parse --short=12 HEAD)"
-fi
-DISTNAME="bitcoin-${VERSION}"
+DISTNAME="bitcoinv-pos-0.21"

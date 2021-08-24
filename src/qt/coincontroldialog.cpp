@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2020 The Bitcoin Core developers
+// Copyright (c) 2011-2019 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -42,7 +42,7 @@ bool CCoinControlWidgetItem::operator<(const QTreeWidgetItem &other) const {
 }
 
 CoinControlDialog::CoinControlDialog(CCoinControl& coin_control, WalletModel* _model, const PlatformStyle *_platformStyle, QWidget *parent) :
-    QDialog(parent, GUIUtil::dialog_flags),
+    QDialog(parent),
     ui(new Ui::CoinControlDialog),
     m_coin_control(coin_control),
     model(_model),
@@ -50,16 +50,32 @@ CoinControlDialog::CoinControlDialog(CCoinControl& coin_control, WalletModel* _m
 {
     ui->setupUi(this);
 
+    // context menu actions
+    QAction *copyAddressAction = new QAction(tr("Copy address"), this);
+    QAction *copyLabelAction = new QAction(tr("Copy label"), this);
+    QAction *copyAmountAction = new QAction(tr("Copy amount"), this);
+             copyTransactionHashAction = new QAction(tr("Copy transaction ID"), this);  // we need to enable/disable this
+             lockAction = new QAction(tr("Lock unspent"), this);                        // we need to enable/disable this
+             unlockAction = new QAction(tr("Unlock unspent"), this);                    // we need to enable/disable this
+
     // context menu
     contextMenu = new QMenu(this);
-    contextMenu->addAction(tr("&Copy address"), this, &CoinControlDialog::copyAddress);
-    contextMenu->addAction(tr("Copy &label"), this, &CoinControlDialog::copyLabel);
-    contextMenu->addAction(tr("Copy &amount"), this, &CoinControlDialog::copyAmount);
-    copyTransactionHashAction = contextMenu->addAction(tr("Copy transaction &ID"), this, &CoinControlDialog::copyTransactionHash);
+    contextMenu->addAction(copyAddressAction);
+    contextMenu->addAction(copyLabelAction);
+    contextMenu->addAction(copyAmountAction);
+    contextMenu->addAction(copyTransactionHashAction);
     contextMenu->addSeparator();
-    lockAction = contextMenu->addAction(tr("L&ock unspent"), this, &CoinControlDialog::lockCoin);
-    unlockAction = contextMenu->addAction(tr("&Unlock unspent"), this, &CoinControlDialog::unlockCoin);
+    contextMenu->addAction(lockAction);
+    contextMenu->addAction(unlockAction);
+
+    // context menu signals
     connect(ui->treeWidget, &QWidget::customContextMenuRequested, this, &CoinControlDialog::showMenu);
+    connect(copyAddressAction, &QAction::triggered, this, &CoinControlDialog::copyAddress);
+    connect(copyLabelAction, &QAction::triggered, this, &CoinControlDialog::copyLabel);
+    connect(copyAmountAction, &QAction::triggered, this, &CoinControlDialog::copyAmount);
+    connect(copyTransactionHashAction, &QAction::triggered, this, &CoinControlDialog::copyTransactionHash);
+    connect(lockAction, &QAction::triggered, this, &CoinControlDialog::lockCoin);
+    connect(unlockAction, &QAction::triggered, this, &CoinControlDialog::unlockCoin);
 
     // clipboard actions
     QAction *clipboardQuantityAction = new QAction(tr("Copy quantity"), this);
@@ -376,7 +392,7 @@ void CoinControlDialog::updateLabelLocked()
     else ui->labelLocked->setVisible(false);
 }
 
-void CoinControlDialog::updateLabels(CCoinControl& m_coin_control, WalletModel *model, QDialog* dialog)
+void CoinControlDialog::updateLabels(CCoinControl& m_coin_control, WalletModel *model, QDialog* dialog, bool forDelegation)
 {
     if (!model)
         return;
@@ -439,7 +455,7 @@ void CoinControlDialog::updateLabels(CCoinControl& m_coin_control, WalletModel *
         else if(ExtractDestination(out.txout.scriptPubKey, address))
         {
             CPubKey pubkey;
-            PKHash* pkhash = std::get_if<PKHash>(&address);
+            PKHash *pkhash = boost::get<PKHash>(&address);
             if (pkhash && model->wallet().getPubKey(out.txout.scriptPubKey, ToKeyID(*pkhash), pubkey))
             {
                 nBytesInputs += (pubkey.IsCompressed() ? 148 : 180);
@@ -448,13 +464,23 @@ void CoinControlDialog::updateLabels(CCoinControl& m_coin_control, WalletModel *
                 nBytesInputs += 148; // in all error cases, simply assume 148 here
         }
         else nBytesInputs += 148;
+
+        // Additional byte for P2CS
+        if (out.txout.scriptPubKey.IsPayToColdStaking())
+            nBytesInputs++;
     }
 
     // calculation
+    const int P2PKH_OUT_SIZE = 34;
+    const int P2CS_OUT_SIZE = 61;
     if (nQuantity > 0)
     {
-        // Bytes
-        nBytes = nBytesInputs + ((CoinControlDialog::payAmounts.size() > 0 ? CoinControlDialog::payAmounts.size() + 1 : 2) * 34) + 10; // always assume +1 output for change here
+        // Bytes: nBytesInputs + (num_of_outputs * bytes_per_output)
+        nBytes = nBytesInputs + std::max(1, payAmounts.size()) * (forDelegation ? P2CS_OUT_SIZE : P2PKH_OUT_SIZE);
+        // always assume +1 (p2pkh) output for change here
+        nBytes += P2PKH_OUT_SIZE;
+        // nVersion, nLockTime and vin/vout len sizes
+        nBytes += 10;
         if (fWitness)
         {
             // there is some fudging in these numbers related to the actual virtual transaction size calculation that will keep this estimate from being exact.
@@ -467,7 +493,7 @@ void CoinControlDialog::updateLabels(CCoinControl& m_coin_control, WalletModel *
         // in the subtract fee from amount case, we can tell if zero change already and subtract the bytes, so that fee calculation afterwards is accurate
         if (CoinControlDialog::fSubtractFeeFromAmount)
             if (nAmount - nPayAmount == 0)
-                nBytes -= 34;
+                nBytes -= P2PKH_OUT_SIZE;
 
         // Fee
         nPayFee = model->wallet().getMinimumFee(nBytes, m_coin_control, nullptr /* returned_target */, nullptr /* reason */);
@@ -488,12 +514,12 @@ void CoinControlDialog::updateLabels(CCoinControl& m_coin_control, WalletModel *
                     nPayFee += nChange;
                     nChange = 0;
                     if (CoinControlDialog::fSubtractFeeFromAmount)
-                        nBytes -= 34; // we didn't detect lack of change above
+                        nBytes -= P2PKH_OUT_SIZE; // we didn't detect lack of change above
                 }
             }
 
             if (nChange == 0 && !CoinControlDialog::fSubtractFeeFromAmount)
-                nBytes -= 34;
+                nBytes -= P2PKH_OUT_SIZE;
         }
 
         // after fee
@@ -501,7 +527,7 @@ void CoinControlDialog::updateLabels(CCoinControl& m_coin_control, WalletModel *
     }
 
     // actually update labels
-    int nDisplayUnit = BitcoinUnits::BTC;
+    int nDisplayUnit = BitcoinUnits::BTCV;
     if (model && model->getOptionsModel())
         nDisplayUnit = model->getOptionsModel()->getDisplayUnit();
 
@@ -562,15 +588,6 @@ void CoinControlDialog::updateLabels(CCoinControl& m_coin_control, WalletModel *
         label->setVisible(nChange < 0);
 }
 
-void CoinControlDialog::changeEvent(QEvent* e)
-{
-    if (e->type() == QEvent::PaletteChange) {
-        updateView();
-    }
-
-    QDialog::changeEvent(e);
-}
-
 void CoinControlDialog::updateView()
 {
     if (!model || !model->getOptionsModel() || !model->getAddressTableModel())
@@ -624,14 +641,37 @@ void CoinControlDialog::updateView()
 
             // address
             CTxDestination outputAddress;
+            CTxDestination outputAddressStaker;
             QString sAddress = "";
-            if(ExtractDestination(out.txout.scriptPubKey, outputAddress))
+            const bool isP2CS = out.txout.scriptPubKey.IsPayToColdStaking();
+            bool haveDest = false;
+
+            if (isP2CS)
+            {
+                TxoutType type;
+                std::vector<CTxDestination> addresses;
+                int nRequired;
+                haveDest = (ExtractDestinations(out.txout.scriptPubKey, type, addresses, nRequired)
+                            && addresses.size() == 2);
+                if (haveDest) {
+                    outputAddressStaker = addresses[0];
+                    outputAddress = addresses[1];
+                }
+            }
+            else
+            {
+                haveDest = ExtractDestination(out.txout.scriptPubKey, outputAddress);
+            }
+
+            if (haveDest)
             {
                 sAddress = QString::fromStdString(EncodeDestination(outputAddress));
 
                 // if listMode or change => show bitcoin address. In tree mode, address is not shown again for direct wallet address outputs
                 if (!treeMode || (!(sAddress == sWalletAddress)))
                     itemOutput->setText(COLUMN_ADDRESS, sAddress);
+                else
+                    itemOutput->setToolTip(COLUMN_ADDRESS, sAddress);
             }
 
             // label
@@ -667,8 +707,9 @@ void CoinControlDialog::updateView()
             // vout index
             itemOutput->setData(COLUMN_ADDRESS, VOutRole, output.n);
 
-             // disable locked coins
-            if (model->wallet().isLockedCoin(output))
+            // disable locked coins
+            const bool isLockedCoin = model->wallet().isLockedCoin(output);
+            if (isLockedCoin)
             {
                 m_coin_control.UnSelect(output); // just to be sure
                 itemOutput->setDisabled(true);
@@ -678,6 +719,17 @@ void CoinControlDialog::updateView()
             // set checkbox
             if (m_coin_control.IsSelected(output))
                 itemOutput->setCheckState(COLUMN_CHECKBOX, Qt::Checked);
+
+            // outputs delegated (for cold staking)
+            if (isP2CS) {
+                itemOutput->setData(COLUMN_CHECKBOX, Qt::UserRole, QString("Delegated"));
+                if (!isLockedCoin)
+                    itemOutput->setIcon(COLUMN_CHECKBOX, QIcon("://ic-check-cold-staking-off"));
+                if (haveDest) {
+                    sAddress = QString::fromStdString(EncodeDestination(outputAddressStaker));
+                    itemOutput->setToolTip(COLUMN_CHECKBOX, tr("delegated to %1 for cold staking").arg(sAddress));
+                }
+            }
         }
 
         // amount
